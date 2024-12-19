@@ -116,6 +116,10 @@
         <label for="config_upload_formats">{{_('Allowed Upload Fileformats')}}</label>
         <input type="text" class="form-control" name="config_upload_formats" id="config_upload_formats" value="{% if config.config_upload_formats != None %}{{ config.config_upload_formats }}{% endif %}" autocomplete="off">
       </div>
+      <div class="form-group">
+        <label for="config_preprocess_with_calibredb">{{_('Fileformats requiring Preprocess with calibredb')}}</label>
+        <input type="text" class="form-control" name="config_preprocess_with_calibredb" id="config_preprocess_with_calibredb" value="{% if config.config_preprocess_with_calibredb != None %}{{ config.config_preprocess_with_calibredb }}{% endif %}" autocomplete="off">
+      </div>
     </div>
     <div class="form-group">
         <input type="checkbox" id="config_anonbrowse" name="config_anonbrowse" {% if config.config_anonbrowse %}checked{% endif %}>

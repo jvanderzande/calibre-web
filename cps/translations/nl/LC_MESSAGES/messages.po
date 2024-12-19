@@ -610,7 +610,12 @@ msgstr "Geüpload boek staat mogelijk al in de bibliotheek, controleer alvorens 
 msgid "File type isn't allowed to be uploaded to this server"
 msgstr "De bestandsextensie '%(ext)s' is niet toegestaan op deze server"
 
-#: cps/editbooks.py:761 cps/editbooks.py:1213
+#: cps/editbooks.py:781
+#, python-format
+msgid "preprocess calibredb Import error: %(error)s"
+msgstr "preprocess calibredb Import foutmelding: %(error)s"
+
+#: cps/editbooks.py:776 cps/editbooks.py:1228
 #, python-format
 msgid "File extension '%(ext)s' is not allowed to be uploaded to this server"
 msgstr "De bestandsextensie '%(ext)s' is niet toegestaan op deze server"
@@ -2355,6 +2360,10 @@ msgstr "(Zorg dat gebruikers uploadrechten hebben)"
 msgid "Allowed Upload Fileformats"
 msgstr "Toegelaten upload bestandsformaten"
 
+#: cps/templates/config_edit.html:120
+msgid "Fileformats requiring Preprocess with calibredb"
+msgstr "Bestandsformaten die met calibredb geconventeerd moeten worden"
+
 #: cps/templates/config_edit.html:122
 msgid "Enable Anonymous Browsing"
 msgstr "Anoniem verkennen inschakelen"
@@ -2758,7 +2767,7 @@ msgstr "Gearchiveerd"
 #: cps/templates/detail.html:301 cps/templates/listenmp3.html:190
 #: cps/templates/search.html:16
 msgid "Add to shelf"
-msgstr "Toevoegen aan boekenplank"
+msgstr "Toev. aan Boekplank"
 
 #: cps/templates/detail.html:313 cps/templates/detail.html:332
 #: cps/templates/feed.xml:81 cps/templates/layout.html:157
@@ -3706,4 +3715,3 @@ msgstr "Synchroniseer geselecteerde boekenplanken met Kobo"
 #, fuzzy
 msgid "Show Read/Unread Section"
 msgstr "Toon gelezen/niet gelezen selectie"
-

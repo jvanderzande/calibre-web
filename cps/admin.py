@@ -1802,6 +1802,11 @@ def _configuration_update_helper():
                 helper.uniq([x.strip().lower() for x in to_save["config_upload_formats"].split(',')]))
             _config_string(to_save, "config_upload_formats")
 
+        if "config_preprocess_with_calibredb" in to_save:
+            to_save["config_preprocess_with_calibredb"] = ','.join(
+                helper.uniq([x.strip().lower() for x in to_save["config_preprocess_with_calibredb"].split(',')]))
+            _config_string(to_save, "config_preprocess_with_calibredb")
+
         _config_string(to_save, "config_calibre")
         _config_string(to_save, "config_binariesdir")
         _config_string(to_save, "config_kepubifypath")
@@ -2099,7 +2104,7 @@ def _handle_edit_user(to_save, content, languages, translations, kobo_support):
 
 
 def extract_user_data_from_field(user, field):
-    match = re.search(field + r"=(.*?)($|(?<!\\),)", user, re.IGNORECASE | re.UNICODE)    
+    match = re.search(field + r"=(.*?)($|(?<!\\),)", user, re.IGNORECASE | re.UNICODE)
     if match:
         return match.group(1)
     else:

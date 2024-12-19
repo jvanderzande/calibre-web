@@ -748,14 +748,29 @@ def create_book_on_upload(modify_date, meta):
 
 def file_handling_on_upload(requested_file):
     # check if file extension is correct
+    preprocess_with_calibredb = config.config_preprocess_with_calibredb.split(',')
+    preprocessed = False
+
+    if '.' in requested_file.filename:
+        file_ext = requested_file.filename.rsplit('.', 1)[-1].lower()
+
+    # first preprocess to get the real file extension
+    if file_ext in preprocess_with_calibredb:
+        try:
+            meta = uploader.preprocess_upload(requested_file, config.config_rarfile_location)
+            file_ext = requested_file.filename.rsplit('.', 1)[-1].lower()
+            preprocessed = True
+        except Exception as e:
+            log.error("preprocess_upload ended with error: %s", str(e))
+            flash(_("preprocess calibredb Import error: %(error)s", error=str(e)), category="error")
+            return None, Response(json.dumps({"location": url_for("web.index")}), mimetype='application/json')
+
     allowed_extensions = config.config_upload_formats.split(',')
     if requested_file:
-        if config.config_check_extensions and allowed_extensions != ['']:
+        if not preprocessed and config.config_check_extensions and allowed_extensions != ['']:
             if not validate_mime_type(requested_file, allowed_extensions):
                 flash(_("File type isn't allowed to be uploaded to this server"), category="error")
                 return None, make_response(jsonify(location=url_for("web.index")))
-    if '.' in requested_file.filename:
-        file_ext = requested_file.filename.rsplit('.', 1)[-1].lower()
         if file_ext not in allowed_extensions and '' not in allowed_extensions:
             flash(
                 _("File extension '%(ext)s' is not allowed to be uploaded to this server",
@@ -765,14 +780,15 @@ def file_handling_on_upload(requested_file):
         flash(_('File to be uploaded must have an extension'), category="error")
         return None, make_response(jsonify(location=url_for("web.index")))
 
-    # extract metadata from file
-    try:
-        meta = uploader.upload(requested_file, config.config_rarfile_location)
-    except (IOError, OSError):
-        log.error("File %s could not saved to temp dir", requested_file.filename)
-        flash(_("File %(filename)s could not saved to temp dir",
-                filename=requested_file.filename), category="error")
-        return None, make_response(jsonify(location=url_for("web.index")))
+    if not preprocessed:
+        # extract metadata from file
+        try:
+            meta = uploader.upload(requested_file, config.config_rarfile_location)
+        except (IOError, OSError):
+            log.error("File %s could not saved to temp dir", requested_file.filename)
+            flash(_("File %(filename)s could not saved to temp dir",
+                    filename=requested_file.filename), category="error")
+            return None, make_response(jsonify(location=url_for("web.index")))
     return meta, None
 
 

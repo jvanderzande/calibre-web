@@ -275,3 +275,81 @@ def upload(uploadfile, rar_excecutable):
     log.debug("Temporary file: %s", tmp_file_path)
     uploadfile.save(tmp_file_path)
     return process(tmp_file_path, filename_root, file_extension, rar_excecutable)
+
+#### Jos_Mods ####> Start changes for acsm upload
+from . import config
+import subprocess
+import re
+import glob
+
+def preprocess_upload(uploadfile, rar_excecutable):
+    # calibredb will convert the ACSM and retrieve the ebook into temp calibredb
+    # then export it into the original tempfilename and set file Extension to the found original ebook format
+    # after this, the standard process is used to import the ebook into the calibredb
+    # in case there is an error that trigger an exception and replace the filename with the error so it will be displayed.
+    tmp_dir = get_temp_dir()
+    filename = uploadfile.filename
+    filename_root, file_extension = os.path.splitext(filename)
+    md5 = hashlib.md5(filename.encode('utf-8')).hexdigest()  # nosec
+    tmp_file_path = os.path.join(tmp_dir, md5) + file_extension
+    log.debug("Temporary file: %s", tmp_file_path)
+    uploadfile.save(tmp_file_path )
+
+    tmpCalibreDir = tmp_dir + "/tmpcalibre"
+
+    def cleanup():
+        performcmd(["rm","-r",tmpCalibreDir])
+
+    def check_importlog(itext, tfind, iOption=0, raiseExcept=False):
+        result = re.findall(tfind, itext, iOption)
+        if len(result) >= 1:
+            if raiseExcept:
+                exit_with_exception(result[0])
+
+            log.debug("Check %s found in log: %s", tfind, result[0])
+            return result[0]
+        return ''
+
+    def exit_with_exception(mtext):
+        cleanup()
+        raise IOError(mtext)
+
+    def performcmd(cmd, dlog='y'):
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        log.debug("Command: %s", cmd)
+        if dlog == 'y':
+            log.debug("  -     rc: %s ", result.returncode)
+            log.debug("  - stdout: %s", result.stdout)
+            log.debug("  - stderr: %s", result.stderr)
+        return result.returncode, result.stdout, result.stderr
+
+    performcmd(["mkdir",tmpCalibreDir])
+    log.debug('> Start calibredb import for ACSM file: %s  tmpfile:%s', uploadfile.filename, tmp_file_path)
+    rc, stdout, stderr = performcmd(["calibredb", "add", tmp_file_path, "-d", "--with-library", tmpCalibreDir])
+    bookid = check_importlog(stdout, '^Added book ids:\\s*(\\d*)', re.MULTILINE)
+    log.debug("calibredb add rc: %s bookid: %s", rc, bookid)
+
+    if bookid != '':
+        #test for errors in DeACSM: Looks like there's been an error during Fulfillment: <error xmlns="http://ns.adobe.com/adept" data="E_LIC_ALREADY_FULFILLED_BY_ANOTHER_USER http:
+        check_importlog(stdout, 'error during Fulfillment:.*data=["\\s]*(.*)http:', 0, True)
+        check_importlog(stdout, '(No write access to .*)', 0, True)
+    else:
+        exit_with_exception("calibredb process did not add a book. check the calibre-web.log for details")
+
+    #
+    # export the imported book for use with the standard process
+    rc, stdout, stderr = performcmd(["calibredb","export", bookid, "--dont-write-opf", "--dont-save-cover", "--dont-save-extra-files", "--single-dir", "--to-dir", tmpCalibreDir, "--template", "{id}", "--with-library", tmpCalibreDir])
+    log.debug("calibredb export rc: %s", rc)
+    #Find the exported ebook and get its name & extension
+    for file_name in glob.glob(tmpCalibreDir + "/" + bookid + ".*"):
+        filename_root, file_extension = os.path.splitext(file_name)
+        log.info("converted %s to Ebook Filename: %s  Extension: %s", uploadfile.filename, file_name, file_extension)
+        uploadfile.filename = file_name
+        break
+    log.debug("Copy exported ebook file to original upload tempfile: %s/%s%s to %s",tmpCalibreDir, bookid, file_extension, tmp_file_path)
+    performcmd(["cp", tmpCalibreDir + "/" + bookid  + file_extension ,tmp_file_path])
+    cleanup()
+
+    return process(tmp_file_path, filename_root, file_extension, rar_excecutable)
+#    return uploadfile.filename
+#### Jos_Mods ####< End changes for acsm upload
