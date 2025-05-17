@@ -112,7 +112,7 @@ def add_security_headers(resp):
     resp.headers['X-Content-Type-Options'] = 'nosniff'
     resp.headers['X-Frame-Options'] = 'SAMEORIGIN'
     resp.headers['X-XSS-Protection'] = '1; mode=block'
-    resp.headers['Strict-Transport-Security'] = 'max-age=31536000';
+    resp.headers['Strict-Transport-Security'] = 'max-age=31536000'
     return resp
 
 
@@ -1242,7 +1242,12 @@ def serve_book(book_id, book_format, anyname):
 @login_required_if_no_ano
 @download_required
 def download_link(book_id, book_format, anyname):
-    client = "kobo" if "Kobo" in request.headers.get('User-Agent') else ""
+    if "kindle" in request.headers.get('User-Agent').lower():
+        client = "kindle"
+    elif "Kobo" in request.headers.get('User-Agent').lower():
+        client = "kobo"
+    else:
+        client = ""
     return get_download_link(book_id, book_format, client)
 
 
